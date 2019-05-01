@@ -5,9 +5,14 @@ Moving virtrual machines between subscriptions is not something you can accompli
 
 The script ***MoveVM.ps1*** in this directory can accomplish moving a VM between two Azure Subscriptions where the user has access rights to both subscriptions. 
 
-During this process, a copy of the virtual machine is created in a destination subscription. The original machine is not affected.
+During this process, a copy of the virtual machine is created in a destination 
+subscription. The original machine is not affected.
 
-What next?
+### Use Cases ###
+1. Copy a Virtual Machine from one subscription to antoher.
+2. Copy a Virtual Machine within a subscription.
+
+### What next? ###
 - Finish reading this document.
 - Identify a Virtual Machine you want to move and to where.
 - Create the destination resource group and virtual network.
@@ -22,7 +27,7 @@ The file ***MoveVMConfig.json*** has several settings that you, the user, will h
 |SOURCE_SUBSCRIPTION_ID|The subscription ID where the Virtual Machine resides in now.|
 |SOURCE_SUBSCRIPTION_RESOURCE_GROUP|The Azure Resource Group that contains the Virtual Machine to move.|
 |SOURCE_MACHINE|The name of the Virtual Machine in the above Azure Resource Group|
-|DESTINATION_SUBSCRIPTION_ID|The subscription ID where the VM will be re-constituted|
+|DESTINATION_SUBSCRIPTION_ID|The subscription ID where the VM will be re-constituted. If copying to the same subscription, this value will be equal to SOURCE_SUBSCRIPTION_ID|
 |DESTINATION_SUBSCRIPTION_RESOURCE_GROUP|The Azure Resource Group that will hold the re-constituted Virtual Machine <sup>1</sup>|
 |DESTINATION_SUBSCRIPTION_VIRTUAL_NETWORK|The Azure Virtual Network to attach to the newly created Virtual Machine <sup>2</sup>|
 
@@ -41,6 +46,7 @@ The following are the steps that are taken by the scripts when the Virtual machi
 2. Get the source virtual machine information.
 3. Create a snapshot of the os disk of the source machine.
 4. Create a managed disk from the snapshot.
+    - <b>You will be prompted to confirm the move when the scritpt runs. </b>
 5. Copy the managed disk to the identified resource group in the destination subscription.
 6. Set the context to the destination subscription.
 7. Create the virtual machine

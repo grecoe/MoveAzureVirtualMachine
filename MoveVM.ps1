@@ -16,7 +16,7 @@ Write-Host('********** SOURCE SUBSCRIPTION')
 Select-AzureRMSubscription -SubscriptionId $config.SubscriptionId
 
 Write-Host('********** EXISTING VIRTUAL MACHINE')
-$info = [VirtualMachineUtils]::GetVmInfo('dangtest','testmovemachine')
+$info = [VirtualMachineUtils]::GetVmInfo($config.ResourceGroupName,$config.VirtualMachine)
 Write-Host(($info | ConvertTo-Json))
 Write-Host('')
 
