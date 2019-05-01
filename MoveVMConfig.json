@@ -1,0 +1,8 @@
+{
+	"SubscriptionId" : "SOURCE_SUBSCRIPTION_ID",
+	"ResourceGroup" : "SOURCE_SUBSCRIPTION_RESOURCE_GROUP",
+	"VirtualMachine" : "SOURCE_MACHINE",
+	"DestinationSubscriptionId" : "DESTINATION_SUBSCRIPTION_ID",
+	"DestinationResourceGroup" : "DESTINATION_SUBSCRIPTION_RESOURCE_GROUP",
+	"DestinationVirtualNetworkName" : "DESTINATION_SUBSCRIPTION_VIRTUAL_NETWORK"
+}
