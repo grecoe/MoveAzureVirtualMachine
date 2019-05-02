@@ -19,6 +19,14 @@ subscription. The original machine is not affected.
 - Modify the ***MoveVMConfig.json*** file with your settings.
 - Run the ***MoveVM.ps1*** script.
 
+## Prerequisites
+There are a few things you must ensure have occured before running these scripts:
+
+* Ensure you have the latest version of PowerShell. You can determine the version and how to update it using [this](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-windows-powershell?view=powershell-6) link. 
+* Ensure you have the latest version of AzureRM modules by following [these](https://www.powershellgallery.com/packages/AzureRM/6.13.1) instructions. 
+* Ensure you have the latest Azure CLI by following [these](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) instructions.
+
+
 # Configuration Requirements
 The file ***MoveVMConfig.json*** has several settings that you, the user, will have to collect and replace before calling the ***MoveVM.ps1*** script.
 
