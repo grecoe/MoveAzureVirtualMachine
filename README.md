@@ -33,7 +33,7 @@ The file ***MoveVMConfig.json*** has several settings that you, the user, will h
 
 <sup>1</sup> If this resource group exists in the subscription, it is used. Otherwise it is created for you in the same region that the source Virtual Machine resides. If you have created it already, it should also be in the same region as the source Virtual Machine.
 
-<sup>2</sup> If this VNET exists (resource checked by name only in the destination resource group) it is used. If it does not exist it is created with a single default subnet with the address space of 172.30.25.0/24. If created on your behalf, you may need to modify the address space. 
+<sup>2</sup> If this VNET exists (resource checked by name only in the destination resource group) it is used. If it does not exist it is created with a single default subnet with the address space of 172.30.25.0/24. If created on your behalf, it should be in the same region as the source Virtual Machine and you may need to modify the address space. 
 
 # The Process
 The following are the steps that are taken by the scripts when the Virtual machine is re-created. 
@@ -59,6 +59,6 @@ The following are the steps that are taken by the scripts when the Virtual machi
     - Create the network information:
         - New public IP
         - Virtual network
-        - Network security group    
-        - Network interface
+        - New network security group    
+        - New network interface
     - Virtual machine creation
