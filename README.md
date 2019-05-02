@@ -28,12 +28,12 @@ The file ***MoveVMConfig.json*** has several settings that you, the user, will h
 |SOURCE_SUBSCRIPTION_RESOURCE_GROUP|The Azure Resource Group that contains the Virtual Machine to move.|
 |SOURCE_MACHINE|The name of the Virtual Machine in the above Azure Resource Group|
 |DESTINATION_SUBSCRIPTION_ID|The subscription ID where the VM will be re-constituted. If copying to the same subscription, this value will be equal to SOURCE_SUBSCRIPTION_ID|
-|DESTINATION_SUBSCRIPTION_RESOURCE_GROUP|The Azure Resource Group that will hold the re-constituted Virtual Machine <sup>1</sup>|
-|DESTINATION_SUBSCRIPTION_VIRTUAL_NETWORK|The Azure Virtual Network to attach to the newly created Virtual Machine <sup>2</sup>|
+|DESTINATION_SUBSCRIPTION_RESOURCE_GROUP|The Azure Resource Group that will hold the copied Virtual Machine <sup>1</sup>|
+|DESTINATION_SUBSCRIPTION_VIRTUAL_NETWORK|The Azure Virtual Network to attach to the copied Virtual Machine <sup>2</sup>|
 
-<sup>1</sup> Before running the script you need to go to the destination subscription and create the resource group to move the VM to. <b>This resource group should be in the SAME region that the original Virtual Machine is from</b>
+<sup>1</sup> If this resource group exists in the subscription, it is used. Otherwise it is created for you in the same region that the source Virtual Machine resides. If you have created it already, it should also be in the same region as the source Virtual Machine.
 
-<sup>2</sup> After creating the destination Azure Resource Group, create an Azure Virtual Network in the destination resource group. <b>This virtual network should be in the SAME region that the original Virtual Machine is from</b>
+<sup>2</sup> If this VNET exists (resource checked by name only in the destination resource group) it is used. If it does not exist it is created with a single default subnet with the address space of 172.30.25.0/24. If created on your behalf, you may need to modify the address space. 
 
 # The Process
 The following are the steps that are taken by the scripts when the Virtual machine is re-created. 
@@ -47,9 +47,11 @@ The following are the steps that are taken by the scripts when the Virtual machi
 3. Create a snapshot of the os disk of the source machine.
 4. Create a managed disk from the snapshot.
     - <b>You will be prompted to confirm the move when the scritpt runs. </b>
-5. Copy the managed disk to the identified resource group in the destination subscription.
-6. Set the context to the destination subscription.
-7. Create the virtual machine
+5. Determine if the destination resource group exists, if not create it.
+6. Determine if the virtual network exists, if not create it.
+7. Copy the managed disk to the identified resource group in the destination subscription.
+8. Set the context to the destination subscription.
+9. Create the virtual machine
     - New Virtual Machine will have the same:
         - Disk Size
         - VM SKU

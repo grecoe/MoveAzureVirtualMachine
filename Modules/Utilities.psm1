@@ -1,3 +1,26 @@
+<#	
+	Copyright  Microsoft Corporation ("Microsoft").
+	
+	Microsoft grants you the right to use this software in accordance with your subscription agreement, if any, to use software 
+	provided for use with Microsoft Azure ("Subscription Agreement").  All software is licensed, not sold.  
+	
+	If you do not have a Subscription Agreement, or at your option if you so choose, Microsoft grants you a nonexclusive, perpetual, 
+	royalty-free right to use and modify this software solely for your internal business purposes in connection with Microsoft Azure 
+	and other Microsoft products, including but not limited to, Microsoft R Open, Microsoft R Server, and Microsoft SQL Server.  
+	
+	Unless otherwise stated in your Subscription Agreement, the following applies.  THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT 
+	WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL MICROSOFT OR ITS LICENSORS BE LIABLE 
+	FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED 
+	TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+	HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THE SAMPLE CODE, EVEN IF ADVISED OF THE
+	POSSIBILITY OF SUCH DAMAGE.
+#>
+
+<#
+	This file contains a group of helper functions to create new resources allowing the main script to not be so cluttered.
+#>
 
 using module .\VirtualMachineUtil.psm1
 using module .\Configuration.psm1
@@ -24,11 +47,50 @@ function CreateManagedDiskFromSnapshot {
 	$newOSDisk
 }
 
+function CreateDestinationResourceGroup{
+	Param([MoveConfiguration] $config, [VirtualMachineInfo] $vmInfo)
+
+	# have to set context to the destination sub
+	$result = Select-AzureRMSubscription -SubscriptionId $config.DestinationSubscriptionId
+	$result = az account set -s $config.DestinationSubscriptionId
+	
+	$result = az group exists -n foobar
+	$exists = [bool]::Parse($result)
+	
+	if($exists -eq $false)
+	{
+		Write-Host("Creating Destination Resource Group")
+		$autoTags = @{}
+		$autoTags.Add("CopyFromSub", $config.SubscriptionId)
+		$autoTags.Add("CopyFromRg", $config.ResourceGroupName)
+		$result = New-AzureRmResourceGroup -Name $config.DestinationResourceGroup -Location $vmInfo.Region -Tag $autoTags 
+	}
+
+	# Set it back to originating subscription
+	$result = Select-AzureRMSubscription -SubscriptionId $config.SubscriptionId
+	$result = az account set -s $config.SubscriptionId
+}
+
 function MoveDisk{
 	Param([MoveConfiguration] $config, [string] $storageType, [string]$diskId)
 
 	$moveCommand = "Move-AzureRmResource -DestinationSubscriptionId " + $config.DestinationSubscriptionId + " -DestinationResourceGroupName " + $config.DestinationResourceGroup + " -ResourceId " + $diskId
 	$result = Invoke-Expression $moveCommand
+}
+
+function CreateVNET{
+	Param([MoveConfiguration] $config, [VirtualMachineInfo] $vmInfo)
+	
+	$existingVnet = Get-AzureRMResource -ResourceGroupName $config.DestinationResourceGroup -Name $config.VirtualNetworkName -ErrorAction SilentlyContinue
+	
+	if($existingVnet -eq $null)
+	{
+		$addressSpace = "172.30.25.0/24"
+		Write-Host("Creating default VNET with address space : " + $addressSpace)
+		
+		$defaultSubnet = New-AzureRmVirtualNetworkSubnetConfig -Name default -AddressPrefix $addressSpace
+		$result = New-AzureRmVirtualNetwork -Name $config.VirtualNetworkName -ResourceGroupName $config.DestinationResourceGroup -Location $vmInfo.Region -AddressPrefix $addressSpace -Subnet $defaultSubnet
+	}
 }
 
 function CreateVirtualMachine{
