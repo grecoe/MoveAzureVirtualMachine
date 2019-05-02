@@ -19,15 +19,17 @@
 #>
 
 <#
-	This module holds a routine for collecting information about the source VM 
+	CLass representing the MarketPlace information associated with a VM.
 #>
-
 class MarketPlacePlan {
 	[string]$Name
 	[string]$Publilisher 
 	[string]$Product 
 }
 
+<#
+	Class representing the details of a Virtual Machine.
+#>
 class VirtualMachineInfo {
 	[string]$ResourceGroup 
 	[string]$MachineName 
@@ -40,8 +42,23 @@ class VirtualMachineInfo {
 	[MarketPlacePlan]$Plan 
 }
 
+<#
+	Class to collect Virtual Machine information.
+#>
 class VirtualMachineUtils{
 
+	<#
+		GetVmInfo
+		
+		Retrieves VirtualMachine specifics from Azure
+		
+		Parameters:
+			resourceGroup - The resource group the VM lives in.
+			virtualMachineName - The name of the virtual machine.
+								
+		Returns:
+			Instance of VirtualMachineInfo
+	#>
 	static [VirtualMachineInfo] GetVmInfo([string]$resourceGroup, [string]$virtualMachineName) 
 	{
 		[VirtualMachineInfo] $returnInfo = [VirtualMachineInfo]::new()

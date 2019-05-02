@@ -79,6 +79,7 @@ Write-Host('********** CREATE NEW VM')
 CreateVirtualMachine -config $config -vmInfo $info -diskName $managedDisk.Name
 Write-Host('DONE')
 	
+Write-Host('********** REMOVE SNAPSHOT')
+Remove-AzureRMResource -ResourceId $snapshot.Id -Force
 
 Write-Host('************ DONE')
-#Write-Host(($snapshot | ConvertTo-Json))

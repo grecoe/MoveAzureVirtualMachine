@@ -19,11 +19,8 @@
 #>
 
 <#
-	This file contains the class that loads the configuraiton file from disk. This information is vital to determining where
-	the source VM is and the destination. The rest of the information is collected from the VM that is being copied.
+	Class that encapsulates the configuration needed for this application.
 #>
-
-
 class MoveConfiguration {
 	$SubscriptionId 
 	$ResourceGroupName 
@@ -34,6 +31,18 @@ class MoveConfiguration {
 	$VirtualNetworkName 
 
 
+	<#
+		LoadConfiguration
+		
+		Loads up the data from the local configuration json file.
+		
+		Parameters:
+			configurationFile - The path of a local file containing the configuration 
+								options.
+								
+		Returns:
+			Instance of MoveConfiguration
+	#>
 	static [MoveConfiguration] LoadConfiguration([string]$configurationFile)
 	{
 		$configurationObject = Get-Content -Path $configurationFile -raw | ConvertFrom-Json

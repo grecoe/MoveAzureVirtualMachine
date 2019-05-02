@@ -25,7 +25,17 @@
 using module .\VirtualMachineUtil.psm1
 using module .\Configuration.psm1
 
-
+<#
+	CreateOsDiskSnapshot
+	
+	Creates a snapshot of the OS disk attached to an existing virtual machine.
+	
+	Parameters:
+		vmInfo - Information about the Virtual MachineName
+		
+	Returns:
+		PSSnapshot
+#>
 function CreateOsDiskSnapshot{
 	Param([VirtualMachineInfo] $vmInfo)
 
@@ -37,6 +47,19 @@ function CreateOsDiskSnapshot{
 	$snapshot
 }
 
+<#
+	CreateManagedDiskFromSnapshot
+	
+	Creates a managed disk from a snapshot object
+	
+	Parameters:
+		vmInfo - Information about the Virtual MachineName
+		storageType - Type of Azure storage 
+		snapshotId - Azure ResourceID of a snapshot object
+		
+	Returns:
+		PSDisk
+#>
 function CreateManagedDiskFromSnapshot {
 	Param([VirtualMachineInfo] $vmInfo, [string] $storageType, [string]$snapshotId)
 
@@ -47,6 +70,23 @@ function CreateManagedDiskFromSnapshot {
 	$newOSDisk
 }
 
+
+<#
+	CreateDestinationResourceGroup
+	
+	Checks in the destination subscription for a resource group with the name provided in teh 
+	configuration. If not there it is created.
+	
+	Subscription is switched to the destination subscription on entry and switched back to the 
+	source subscription on return.
+	
+	Parameters:
+		config - Script configuration object
+		vmInfo - Information about the Virtual MachineName
+		
+	Returns:
+		Nothing
+#>
 function CreateDestinationResourceGroup{
 	Param([MoveConfiguration] $config, [VirtualMachineInfo] $vmInfo)
 
@@ -55,9 +95,8 @@ function CreateDestinationResourceGroup{
 	$result = az account set -s $config.DestinationSubscriptionId
 	
 	$result = az group exists -n foobar
-	$exists = [bool]::Parse($result)
 	
-	if($exists -eq $false)
+	if($result -and ($result.ToLower() -eq 'false'))
 	{
 		Write-Host("Creating Destination Resource Group")
 		$autoTags = @{}
@@ -71,13 +110,41 @@ function CreateDestinationResourceGroup{
 	$result = az account set -s $config.SubscriptionId
 }
 
-function MoveDisk{
-	Param([MoveConfiguration] $config, [string] $storageType, [string]$diskId)
 
-	$moveCommand = "Move-AzureRmResource -DestinationSubscriptionId " + $config.DestinationSubscriptionId + " -DestinationResourceGroupName " + $config.DestinationResourceGroup + " -ResourceId " + $diskId
+<#
+	MoveDisk
+	
+	Internally is just a MoveAzureRMResource so any resource could be moved.
+	
+	Parameters:
+		config - Script configuration object
+		diskId - Azure resource ID of the disk to move.
+		
+	Returns:
+		Nothing
+#>
+function MoveDisk{
+	Param([MoveConfiguration] $config, [string]$diskId)
+
+	$moveCommand = "Move-AzureRmResource -Force -DestinationSubscriptionId " + $config.DestinationSubscriptionId + " -DestinationResourceGroupName " + $config.DestinationResourceGroup + " -ResourceId " + $diskId
 	$result = Invoke-Expression $moveCommand
 }
 
+<#
+	CreateVNET
+	
+	Create an Azure Virtual Network if it doesn't exist.
+	
+	config has the name of a virtual network. The destination resouce group is checked for that resource by name. If not found, a new 
+	virtual network is created.
+	
+	Parameters:
+		config - Script configuration object
+		vmInfo - Information about the Virtual MachineName
+		
+	Returns:
+		Nothing
+#>
 function CreateVNET{
 	Param([MoveConfiguration] $config, [VirtualMachineInfo] $vmInfo)
 	
@@ -93,18 +160,32 @@ function CreateVNET{
 	}
 }
 
+<#
+	CreateVirtualMachine
+	
+	Create an Azure Virtual Machine in total. 
+	
+	Parameters:
+		config - Script configuration object
+		vmInfo - Information about the Virtual MachineName
+		diskName - Name of the managed disk that was copied over from the source account.
+		
+	Returns:
+		Nothing
+#>
 function CreateVirtualMachine{
 	Param([MoveConfiguration] $config, [VirtualMachineInfo] $vmInfo, [string]$diskName)
 	
 	# Names needed along the way
 	$publicIpName = $vmInfo.MachineName.ToLower()+'_ip'
 	$nicName = $vmInfo.MachineName.ToLower() + '_nic'
+	$machineName = $vmInfo.MachineName + (Get-Date).Ticks.ToString().Substring(0,6)
 
 	# Get the disk to attach
 	$osDiskToRessurect = Get-AzureRmDisk -ResourceGroupName $config.DestinationResourceGroup -DiskName $diskName
 
 	#Initialize virtual machine configuration
-	$newVirtualMachine = New-AzureRMVMConfig -VMName $vmInfo.MachineName -VMSize $vmInfo.Sku
+	$newVirtualMachine = New-AzureRMVMConfig -VMName $machineName -VMSize $vmInfo.Sku
 
 	# Attach the disk with the appropriate OS flag
 	if($vmInfo.OsType.ToLower() -eq 'windows')
@@ -136,13 +217,31 @@ function CreateVirtualMachine{
 	$nic = New-AzureRMNetworkInterface -Name $nicName -NetworkSecurityGroupId $nsg.Id -ResourceGroupName $config.DestinationResourceGroup -Location $vmInfo.Region -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $publicIp.Id
 	################## Prepare the NIC
 
-	
+	#Add network interface
 	$newVirtualMachine = Add-AzureRMVMNetworkInterface -VM $newVirtualMachine -Id $nic.Id
 
+	# Create storage and associate it
+	$storageName = CreateVMStorageAccount -config $config -vmInfo $vmInfo
+	$newVirtualMachine = Set-AzureRmVMBootDiagnostics -VM $newVirtualMachine -Enable -ResourceGroupName $config.DestinationResourceGroup -StorageAccount $storageName
+
+	
 	#Create the virtual machine with Managed Disk
 	New-AzureRMVM -VM $newVirtualMachine -ResourceGroupName $config.DestinationResourceGroup -Location $vmInfo.Region
 }
 
+<#
+	CreateNetworkSecurityGroup
+	
+	Create an Azure Network Security Group. Default rules on the group are extended with the appropriate additional defaults depending
+	on the operating system type. 
+	
+	Parameters:
+		config - Script configuration object
+		vmInfo - Information about the Virtual MachineName
+		
+	Returns:
+		Nothing
+#>
 function CreateNetworkSecurityGroup{
 	Param([MoveConfiguration] $config, [VirtualMachineInfo] $vmInfo)
 	
@@ -165,5 +264,34 @@ function CreateNetworkSecurityGroup{
 	$result = Set-AzureRmNetworkSecurityGroup -NetworkSecurityGroup $nsg
 
 	$nsg
+}
+
+
+<#
+	CreateVMStorageAccount
+	
+	Creats a storage account to be attached for boot diagnostics to the virtual machine.
+	
+	Parameters:
+		config - Script configuration object
+		vmInfo - Information about the Virtual MachineName
+		
+	Returns:
+		Name of the storage account created.
+#>
+function CreateVMStorageAccount{
+	Param([MoveConfiguration] $config, [VirtualMachineInfo] $vmInfo)
+	
+	$stgName = $config.DestinationResourceGroup.ToLower() + $vmInfo.Region.ToLower() + "diag"
+	
+	if($stgName.Length > 23)
+	{ 
+		$stgName = $stgName.Subsstring(0,21)
+	}
+	
+	
+	$result = New-AzureRmStorageAccount -ResourceGroupName $config.DestinationResourceGroup -AccountName $stgName -Location $vmInfo.Region -SkuName Standard_LRS -Kind StorageV2 -AccessTier Hot
+	
+	$stgName
 }
 
