@@ -200,7 +200,12 @@ function CreateVirtualMachine{
 	# Apply market place tags, if there
 	if($vmInfo.Plan)
 	{
+		# Set plan info
 		$newVirtualMachine = Set-AzureRmVMPlan -VM $newVirtualMachine -Product $vmInfo.Plan.Product -Name $vmInfo.Plan.Name -Publisher $vmInfo.Plan.Publilisher
+		
+		#accept terms
+		$agreementTerms = Get-AzureRmMarketplaceTerms -Product $vmInfo.Plan.Product -Name $vmInfo.Plan.Name -Publisher $vmInfo.Plan.Publilisher
+		$agreementTerms = Set-AzureRmMarketplaceTerms -Accept -InputObject $agreementTerms
 	}
 	
 	################## Prepare the NIC
