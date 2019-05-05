@@ -48,6 +48,26 @@ function CreateOsDiskSnapshot{
 }
 
 <#
+	GetDiskStorageType
+	
+	Get the storage type to use for the re-created disk from snapshot.
+	
+	Parameters:
+		vmInfo - Information about the Virtual MachineName
+		
+	Returns:
+		Storage type name (string)
+#>
+function GetDiskStorageType{
+	Param([VirtualMachineInfo] $vmInfo)
+
+	$osDisk = Get-AzureRmDisk -ResourceGroupName $vmInfo.ResourceGroup -DiskName $vmInfo.DiskName
+	
+	Write-Host("Disk Storage Type: " + $osDisk.Sku.Name)
+	$osDisk.Sku.Name
+}
+
+<#
 	CreateManagedDiskFromSnapshot
 	
 	Creates a managed disk from a snapshot object

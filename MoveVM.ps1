@@ -33,10 +33,6 @@ Using module .\Modules\Configuration.psm1
 Using module .\Modules\VirtualMachineUtil.psm1
 Using module .\Modules\Utilities.psm1
 
-# There is likely no need to change this value, so unless there is an error, leave it
-# alone. 
-$storageType = 'Premium_LRS'
-
 Write-Host('********** CONFIGURATION')
 $config = [MoveConfiguration]::LoadConfiguration('.\MoveVMConfig.json')
 Write-Host(($config | ConvertTo-Json))
@@ -53,6 +49,10 @@ Write-Host('')
 
 Write-Host('********** CREATE SNAPSHOT')
 $snapshot = CreateOsDiskSnapshot -vmInfo $info
+Write-Host('DONE')
+
+Write-Host('********** CREATE DISK STORAGE TYPE')
+$storageType = GetDiskStorageType -vmInfo $info
 Write-Host('DONE')
 
 Write-Host('********** CREATE DISK FROM SNAPSHOT')

@@ -26,7 +26,6 @@ There are a few things you must ensure have occured before running these scripts
 * Ensure you have the latest version of AzureRM modules by following [these](https://www.powershellgallery.com/packages/AzureRM/6.13.1) instructions. 
 * Ensure you have the latest Azure CLI by following [these](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) instructions.
 
-
 # Configuration Requirements
 The file ***MoveVMConfig.json*** has several settings that you, the user, will have to collect and replace before calling the ***MoveVM.ps1*** script.
 
@@ -53,13 +52,13 @@ The following are the steps that are taken by the scripts when the Virtual machi
 1. Set the context to the source subscription.
 2. Get the source virtual machine information.
 3. Create a snapshot of the os disk of the source machine.
-4. Create a managed disk from the snapshot.
-    - <b>You will be prompted to confirm the move when the scritpt runs. </b>
-5. Determine if the destination resource group exists, if not create it.
-6. Determine if the virtual network exists, if not create it.
-7. Copy the managed disk to the identified resource group in the destination subscription.
-8. Set the context to the destination subscription.
-9. Create the virtual machine
+4. Get the storage type of the existing disk for the new disk. 
+5. Create a managed disk from the snapshot.
+6. Determine if the destination resource group exists, if not create it.
+7. Determine if the virtual network exists, if not create it.
+8. Copy the managed disk to the identified resource group in the destination subscription.
+9. Set the context to the destination subscription.
+10. Create the virtual machine
     - New Virtual Machine will have the same:
         - Disk Size
         - VM SKU
