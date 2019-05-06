@@ -311,7 +311,7 @@ function CreateVMStorageAccount{
 	
 	if($stgName.Length > 23)
 	{ 
-		$stgName = $stgName.Subsstring(0,21)
+		$stgName = $stgName.SubString(0,18) + "diag"
 	}
 	
 	
