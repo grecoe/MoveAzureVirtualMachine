@@ -23,6 +23,7 @@
 #>
 
 using module .\VirtualMachineUtil.psm1
+using module .\DiskUtil.psm1
 using module .\Configuration.psm1
 
 <#
@@ -43,6 +44,27 @@ function CreateOsDiskSnapshot{
 	$osDisk = Get-AzureRmDisk -ResourceGroupName $vmInfo.ResourceGroup -DiskName $vmInfo.DiskName
 	$snapshotConfig = New-AzureRmSnapshotConfig -SourceUri $osDisk.Id -CreateOption Copy -Location $vmInfo.Region
 	$snapshot= New-AzureRmSnapshot -Snapshot $snapshotConfig -SnapshotName $snapshotName -ResourceGroupName $vmInfo.ResourceGroup
+
+	$snapshot
+}
+
+<#
+	CreateDiskSnapshot
+	
+	Creates a snapshot of the OS disk attached to an existing virtual machine.
+	
+	Parameters:
+		diskInfo - Information about the disk
+		
+	Returns:
+		PSSnapshot
+#>
+function CreateDiskSnapshot{
+	Param([DiskInformation] $diskInfo)
+
+	$snapshotName = $diskInfo.Name.ToLower() + "_ss"
+	$snapshotConfig = New-AzureRmSnapshotConfig -SourceUri $diskInfo.Id -CreateOption Copy -Location $diskInfo.Region
+	$snapshot= New-AzureRmSnapshot -Snapshot $snapshotConfig -SnapshotName $snapshotName -ResourceGroupName $diskInfo.ResourceGroup
 
 	$snapshot
 }
@@ -80,6 +102,29 @@ function GetDiskStorageType{
 	Returns:
 		PSDisk
 #>
+function CreateManagedDiskFromSnapshot2 {
+	Param([DiskInformation] $diskInfo, [string]$snapshotId)
+
+	$diskName = $diskInfo.Name.ToLower() + "_dsk"
+	$newOSDiskConfig = New-AzureRmDiskConfig -AccountType $diskInfo.StorageType -Location $diskInfo.Region -CreateOption Copy -SourceResourceId $snapshotId
+	$newOSDisk = New-AzureRmDisk -Disk $newOSDiskConfig -ResourceGroupName $diskInfo.ResourceGroup -DiskName $diskName
+	
+	$newOSDisk
+}
+
+<#
+	CreateManagedDiskFromSnapshot2
+	
+	Creates a managed disk from a snapshot object
+	
+	Parameters:
+		vmInfo - Information about the Virtual MachineName
+		storageType - Type of Azure storage 
+		snapshotId - Azure ResourceID of a snapshot object
+		
+	Returns:
+		PSDisk
+#>
 function CreateManagedDiskFromSnapshot {
 	Param([VirtualMachineInfo] $vmInfo, [string] $storageType, [string]$snapshotId)
 
@@ -89,7 +134,6 @@ function CreateManagedDiskFromSnapshot {
 	
 	$newOSDisk
 }
-
 
 <#
 	CreateDestinationResourceGroup
@@ -114,7 +158,7 @@ function CreateDestinationResourceGroup{
 	$result = Select-AzureRMSubscription -SubscriptionId $config.DestinationSubscriptionId
 	$result = az account set -s $config.DestinationSubscriptionId
 	
-	$result = az group exists -n foobar
+	$result = az group exists -n $config.DestinationResourceGroup
 	
 	if($result -and ($result.ToLower() -eq 'false'))
 	{

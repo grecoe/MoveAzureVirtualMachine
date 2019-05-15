@@ -1,23 +1,17 @@
-# Moving Virtual Machines Between Azure Subscriptions
+# Moving Virtual Machines or Disks Between Azure Subscriptions
 <sub>Author: Daniel Grecoe, A Microsoft employee</sub>
 
-Moving virtrual machines between subscriptions is not something you can accomplish with the Azure Portal. It requires a bit of work to get the parts in place correctly. 
+Moving virtrual machines created from Marketplace (i.e. DSVM) between subscriptions is not something you can accomplish with the Azure Portal. It requires a bit of work to get the parts in place correctly. 
 
-The script ***MoveVM.ps1*** in this directory can accomplish moving a VM between two Azure Subscriptions where the user has access rights to both subscriptions. 
+Further, your VM might have additional disks attached to it. While the scripts will not attach all of the disks to your new VM, you can move them to the new location as well. 
 
-During this process, a copy of the virtual machine is created in a destination 
-subscription. The original machine is not affected.
+There are two scripts that can accomplish this:
 
-### Use Cases ###
-1. Copy a Virtual Machine from one subscription to antoher.
+## Use Cases ##
+1. Copy a Virtual Machine from one subscription to another.
 2. Copy a Virtual Machine within a subscription.
-
-### What next? ###
-- Finish reading this document.
-- Identify a Virtual Machine you want to move and to where.
-- Create the destination resource group and virtual network.
-- Modify the ***MoveVMConfig.json*** file with your settings.
-- Run the ***MoveVM.ps1*** script.
+3. Copy a Disk from one subscription to another.
+4. Copy a Disk within a subscription.
 
 ## Prerequisites
 There are a few things you must ensure have occured before running these scripts:
@@ -25,8 +19,23 @@ There are a few things you must ensure have occured before running these scripts
 * Ensure you have the latest version of PowerShell. You can determine the version and how to update it using [this](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-windows-powershell?view=powershell-6) link. 
 * Ensure you have the latest version of AzureRM modules by following [these](https://www.powershellgallery.com/packages/AzureRM/6.13.1) instructions. 
 * Ensure you have the latest Azure CLI by following [these](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) instructions.
+* Ensure you have performed an ***az login*** and ***Login-AzureRMAccount***. Depending on your configuraiton, you may already be logged in when you start. 
 
-# Configuration Requirements
+# Move a Virtual Machine
+To move a virtual machine you will need to configure the ***MoveVMConfig.json*** file. When completed, you will then need to run teh ***MoveVM.ps1*** Powershell script. 
+
+During this process, a copy of the virtual machine is created in a destination subscription. The original machine is not affected.
+
+
+### What next? 
+- Finish reading this section.
+- Identify a Virtual Machine you want to move and to where.
+- Optionally create the destination resource group and virtual network. If these are NOT created, they will be created for you on your behalf.
+- Modify the ***MoveVMConfig.json*** file with your settings.
+- Run the ***MoveVM.ps1*** script.
+
+
+## Configuration Requirements
 The file ***MoveVMConfig.json*** has several settings that you, the user, will have to collect and replace before calling the ***MoveVM.ps1*** script.
 
 |Parameter|Description|
@@ -42,30 +51,32 @@ The file ***MoveVMConfig.json*** has several settings that you, the user, will h
 
 <sup>2</sup> If this VNET exists (resource checked by name only in the destination resource group) it is used. If it does not exist it is created with a single default subnet with the address space of 172.30.25.0/24. If created on your behalf, it should be in the same region as the source Virtual Machine and you may need to modify the address space. 
 
-# The Process
-The following are the steps that are taken by the scripts when the Virtual machine is re-created. 
 
-<b>NOTE</b> The source virtual machine will NOT be removed or stopped during this process. A new copy of the virtural machien will be created in the destination resource group. It is up to the caller to delete the source virtual machine when they have verified that the move was succesful. 
+# Move a Disk
+To move a disk you will need to configure the ***MoveDiskConfig.json*** file. When completed, you will then need to run teh ***MoveAzureDisk.ps1*** Powershell script. 
 
-<b>NOTE</b> Before calling the script, ensure you are logged into Azure. Mine happens automatically, you may ned to issue the Login-AzureRMAccount before proceeding.
 
-1. Set the context to the source subscription.
-2. Get the source virtual machine information.
-3. Create a snapshot of the os disk of the source machine.
-4. Get the storage type of the existing disk for the new disk. 
-5. Create a managed disk from the snapshot.
-6. Determine if the destination resource group exists, if not create it.
-7. Determine if the virtual network exists, if not create it.
-8. Copy the managed disk to the identified resource group in the destination subscription.
-9. Set the context to the destination subscription.
-10. Create the virtual machine
-    - New Virtual Machine will have the same:
-        - Disk Size
-        - VM SKU
-        - Name
-    - Create the network information:
-        - New public IP
-        - Virtual network
-        - New network security group    
-        - New network interface
-    - Virtual machine creation
+### What next? 
+- Finish reading this section.
+- Identify a Disk you want to move and to where.
+- Optionally create the destination resource group. If the resource gropu is NOT created, it will be created for you on your behalf.
+- Modify the ***MoveDiskConfig.json*** file with your settings.
+- Run the ***MoveAzureDisk.ps1*** script.
+
+
+## Configuration Requirements
+The file ***MoveDiskConfig.json*** has several settings that you, the user, will have to collect and replace before calling the ***MoveAzureDisk.ps1*** script.
+
+|Parameter|Description|
+|-------------------|----------------------|
+|SOURCE_SUBSCRIPTION_ID|The subscription ID where the Virtual Machine resides in now.|
+|SOURCE_SUBSCRIPTION_RESOURCE_GROUP|The Azure Resource Group that contains the Virtual Machine to move.|
+|DISK_NAME|The name of the Disk =in the above Azure Resource Group|
+|DESTINATION_SUBSCRIPTION_ID|The subscription ID where the VM will be re-constituted. If copying to the same subscription, this value will be equal to SOURCE_SUBSCRIPTION_ID|
+|DESTINATION_SUBSCRIPTION_RESOURCE_GROUP|The Azure Resource Group that will hold the copied Virtual Machine <sup>1</sup>|
+
+<sup>1</sup> If this resource group exists in the subscription, it is used. Otherwise it is created for you in the same region that the source Virtual Machine resides. If you have created it already, it should also be in the same region as the source Virtual Machine.
+
+
+
+

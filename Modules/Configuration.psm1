@@ -19,7 +19,7 @@
 #>
 
 <#
-	Class that encapsulates the configuration needed for this application.
+	Class that encapsulates the configuration needed to move a VM.
 #>
 class MoveConfiguration {
 	$SubscriptionId 
@@ -29,7 +29,6 @@ class MoveConfiguration {
 	$DestinationSubscriptionId 
 	$DestinationResourceGroup 
 	$VirtualNetworkName 
-
 
 	<#
 		LoadConfiguration
@@ -60,5 +59,46 @@ class MoveConfiguration {
 
 		return $returnConfig
 	}		
+}
 
+
+<#
+	Class that encapsulates the configuration needed to move a disk.
+#>
+class MoveDiskConfiguration {
+	$SubscriptionId 
+	$ResourceGroupName 
+	$DiskName 
+
+	$DestinationSubscriptionId 
+	$DestinationResourceGroup 
+
+	<#
+		LoadConfiguration
+		
+		Loads up the data from the local configuration json file.
+		
+		Parameters:
+			configurationFile - The path of a local file containing the configuration 
+								options.
+								
+		Returns:
+			Instance of MoveConfiguration
+	#>
+	static [MoveDiskConfiguration] LoadConfiguration([string]$configurationFile)
+	{
+		$configurationObject = Get-Content -Path $configurationFile -raw | ConvertFrom-Json
+		$configuration = @{}
+		$configurationObject.psobject.properties | Foreach { $configuration[$_.Name] = $_.Value }
+		
+		[MoveDiskConfiguration]$returnConfig = [MoveDiskConfiguration]::new()
+		$returnConfig.SubscriptionId = $configuration['SubscriptionId']
+		$returnConfig.ResourceGroupName = $configuration['ResourceGroup']
+		$returnConfig.DiskName = $configuration['DiskName']
+
+		$returnConfig.DestinationSubscriptionId = $configuration['DestinationSubscriptionId']
+		$returnConfig.DestinationResourceGroup = $configuration['DestinationResourceGroup']
+
+		return $returnConfig
+	}		
 }
