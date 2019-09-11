@@ -353,7 +353,7 @@ function CreateVMStorageAccount{
 	
 	$stgName = $config.DestinationResourceGroup.ToLower() + $vmInfo.Region.ToLower() + "diag"
 	
-	if($stgName.Length > 23)
+	if($stgName.Length -gt 23)
 	{ 
 		$stgName = $stgName.SubString(0,18) + "diag"
 	}
