@@ -1,7 +1,7 @@
 {
 	"SubscriptionId" : "SOURCE_SUBSCRIPTION_ID",
 	"ResourceGroup" : "SOURCE_SUBSCRIPTION_RESOURCE_GROUP",
-	"DiskName" : "DISK_NAME",
+	"DiskName" : [ "DISK_NAME", "DISKNAME2"],
 	"DestinationSubscriptionId" : "DESTINATION_SUBSCRIPTION_ID",
 	"DestinationResourceGroup" : "DESTINATION_SUBSCRIPTION_RESOURCE_GROUP"
 }

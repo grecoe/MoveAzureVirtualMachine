@@ -34,44 +34,48 @@ $config = [MoveDiskConfiguration]::LoadConfiguration('.\MoveDiskConfig.json')
 Write-Host(($config | ConvertTo-Json))
 Write-Host('')
 
+foreach($diskName in $config.DiskName)
+{
+	Write-Host($diskName)
 
-Write-Host('********** SOURCE SUBSCRIPTION')
-Select-AzureRMSubscription -SubscriptionId $config.SubscriptionId
+	Write-Host('********** SOURCE SUBSCRIPTION')
+	Select-AzureRMSubscription -SubscriptionId $config.SubscriptionId
 
-Write-Host('********** EXISTING DISK')
-$info = [DiskUtils]::GetDiskInfo($config.ResourceGroupName,$config.DiskName)
-$info.SubscriptionId = $config.SubscriptionId
-Write-Host(($info | ConvertTo-Json))
-Write-Host('')
-Write-Host('DONE')
+	Write-Host('********** EXISTING DISK')
+	$info = [DiskUtils]::GetDiskInfo($config.ResourceGroupName, $diskName)
+	$info.SubscriptionId = $config.SubscriptionId
+	Write-Host(($info | ConvertTo-Json))
+	Write-Host('')
+	Write-Host('DONE')
 
-Write-Host('********** CREATE SNAPSHOT')
-$snapshot = CreateDiskSnapshot -diskInfo $info
-Write-Host('DONE')
+	Write-Host('********** CREATE SNAPSHOT')
+	$snapshot = CreateDiskSnapshot -diskInfo $info
+	Write-Host('DONE')
 
 
-Write-Host('********** CREATE DISK FROM SNAPSHOT')
-$managedDisk = CreateManagedDiskFromSnapshot2 -diskInfo $info -snapshotId $snapshot.Id
-Write-Host('DONE')
+	Write-Host('********** CREATE DISK FROM SNAPSHOT')
+	$managedDisk = CreateManagedDiskFromSnapshot2 -diskInfo $info -snapshotId $snapshot.Id
+	Write-Host('DONE')
 
-[MoveConfiguration]$moveConfig = [MoveConfiguration]::new()
-$moveConfig.SubscriptionId = $config.SubscriptionId
-$moveConfig.ResourceGroupName = $config.ResourceGroupName
-$moveConfig.DestinationSubscriptionId = $config.DestinationSubscriptionId
-$moveConfig.DestinationResourceGroup = $config.DestinationResourceGroup
-[VirtualMachineInfo] $vmInfo = [VirtualMachineInfo]::new()
-$vmInfo.Region = $info.Region
+	[MoveConfiguration]$moveConfig = [MoveConfiguration]::new()
+	$moveConfig.SubscriptionId = $config.SubscriptionId
+	$moveConfig.ResourceGroupName = $config.ResourceGroupName
+	$moveConfig.DestinationSubscriptionId = $config.DestinationSubscriptionId
+	$moveConfig.DestinationResourceGroup = $config.DestinationResourceGroup
+	[VirtualMachineInfo] $vmInfo = [VirtualMachineInfo]::new()
+	$vmInfo.Region = $info.Region
 
-Write-Host('********** CHECK FOR DESTINATION RESOURCE GROUP')
-CreateDestinationResourceGroup -config $moveConfig -vmInfo $vmInfo
-Write-Host('DONE')
+	Write-Host('********** CHECK FOR DESTINATION RESOURCE GROUP')
+	CreateDestinationResourceGroup -config $moveConfig -vmInfo $vmInfo
+	Write-Host('DONE')
 
-Write-Host('********** MOVE DISK')
-MoveDisk -config $moveConfig -diskId $managedDisk.Id
-Write-Host('DONE')
+	Write-Host('********** MOVE DISK')
+	MoveDisk -config $moveConfig -diskId $managedDisk.Id
+	Write-Host('DONE')
 	
-Write-Host('********** REMOVE SNAPSHOT')
-Remove-AzureRMResource -ResourceId $snapshot.Id -Force
-Write-Host('DONE')
+	Write-Host('********** REMOVE SNAPSHOT')
+	Remove-AzureRMResource -ResourceId $snapshot.Id -Force
+	Write-Host('DONE')
+}
 
 Write-Host('************ DONE')
