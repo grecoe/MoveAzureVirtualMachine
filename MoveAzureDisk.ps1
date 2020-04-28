@@ -51,7 +51,7 @@ foreach($diskName in $config.DiskName)
 	Write-Host('********** CREATE SNAPSHOT')
 	$snapshot = CreateDiskSnapshot -diskInfo $info
 	Write-Host('DONE')
-
+ 
 
 	Write-Host('********** CREATE DISK FROM SNAPSHOT')
 	$managedDisk = CreateManagedDiskFromSnapshot2 -diskInfo $info -snapshotId $snapshot.Id
